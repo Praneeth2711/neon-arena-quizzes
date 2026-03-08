@@ -154,6 +154,40 @@
   }
 }
 
+/* Gradient text classes */
+.hero-gradient-text {
+  background: linear-gradient(135deg, hsl(263 70% 65%) 0%, hsl(187 94% 55%) 50%, hsl(330 81% 65%) 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 6s ease infinite;
+}
+
+.hero-gradient-text-alt {
+  background: linear-gradient(135deg, hsl(187 94% 55%) 0%, hsl(330 81% 65%) 50%, hsl(263 70% 65%) 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 6s ease infinite;
+  animation-delay: 0.5s;
+}
+
+.hero-gradient-text-inline {
+  background: linear-gradient(135deg, hsl(263 70% 65%), hsl(330 81% 65%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-gradient-text-blue-inline {
+  background: linear-gradient(135deg, hsl(187 94% 55%), hsl(263 70% 65%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
