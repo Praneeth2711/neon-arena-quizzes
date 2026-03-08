@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppShell from "../components/layout/AppShell";
-import { Users, Clock, ArrowRight } from "lucide-react";
+import { Users, ArrowRight } from "lucide-react";
 
 const ROOMS = [
   { id: "1", name: "Quantum Physics", players: 8, max: 10, status: "live" as const, category: "Science", difficulty: "Hard" },
@@ -36,24 +36,22 @@ const Lobby = () => {
 
   return (
     <AppShell>
-      <div className="min-h-screen py-10 px-4">
-        <div className="max-w-5xl mx-auto">
-          {/* Header */}
+      <div className="min-h-screen py-10 px-6 lg:px-8">
+        <div className="max-w-[1280px] mx-auto">
           <motion.div className="mb-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">Game Lobby</h1>
-            <p className="text-muted-foreground mt-2">Find a room and start playing</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Game Lobby</h1>
+            <p className="text-muted-foreground mt-1.5 text-[15px]">Find a room and start playing</p>
           </motion.div>
 
-          {/* Filters */}
           <div className="flex gap-2 mb-6">
             {FILTERS.map((f) => (
               <motion.button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-all ${
                   filter === f
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-muted-foreground hover:text-foreground"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-card text-muted-foreground hover:text-foreground border border-border"
                 }`}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -64,23 +62,22 @@ const Lobby = () => {
             ))}
           </div>
 
-          {/* Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filtered.map((room, i) => (
               <motion.div
                 key={room.id}
                 className="card-premium p-5 group"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                whileHover={{ y: -4 }}
+                transition={{ delay: i * 0.04, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                whileHover={{ y: -3 }}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-semibold text-foreground truncate">{room.name}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">{room.category}</p>
+                    <h3 className="text-[15px] font-semibold text-foreground truncate">{room.name}</h3>
+                    <p className="text-[12px] text-muted-foreground mt-0.5">{room.category}</p>
                   </div>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
                     room.status === "live"
                       ? "bg-success/10 text-success"
                       : "bg-primary/10 text-primary"
@@ -96,20 +93,21 @@ const Lobby = () => {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-3 text-sm text-muted-foreground mb-4">
+                <div className="flex items-center gap-3 text-[13px] text-muted-foreground mb-4">
                   <span className="flex items-center gap-1">
                     <Users className="w-3.5 h-3.5" />
                     {room.players}/{room.max}
                   </span>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${difficultyColors[room.difficulty]}`}>
+                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${difficultyColors[room.difficulty]}`}>
                     {room.difficulty}
                   </span>
                 </div>
 
                 <motion.button
                   onClick={() => navigate("/room")}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-                  whileHover={{ scale: 1.01 }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold text-primary-foreground transition-all"
+                  style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
+                  whileHover={{ scale: 1.01, boxShadow: "0 4px 16px hsl(245 58% 51% / 0.2)" }}
                   whileTap={{ scale: 0.99 }}
                 >
                   Join Room
