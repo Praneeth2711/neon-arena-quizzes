@@ -1,0 +1,1 @@
+ALTER TABLE public.chat_messages DROP CONSTRAINT chat_messages_room_id_fkey;
