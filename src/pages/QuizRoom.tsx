@@ -164,7 +164,7 @@ const QuizRoom = () => {
               transition={{ delay: 0.2 }}
               className="sticky top-24"
             >
-              <ChatPanel />
+              <ChatPanel roomId={currentRoomId} />
             </motion.div>
           </div>
 
