@@ -22,7 +22,8 @@ const PLAYERS = [
 ];
 
 const QuizRoom = () => {
-  const [qIdx, setQIdx] = useState(0);
+  const { roomId } = useParams();
+  const currentRoomId = roomId ?? "demo-room";
   const [selected, setSelected] = useState<number | null>(null);
   const [showCorrect, setShowCorrect] = useState(false);
   const [timeLeft, setTimeLeft] = useState(20);
