@@ -212,7 +212,7 @@ const QuizRoom = () => {
                   transition={{ duration: 0.2 }}
                   className="min-h-[400px]"
                 >
-                  <ChatPanel />
+                  <ChatPanel roomId={currentRoomId} />
                 </motion.div>
               )}
             </AnimatePresence>
