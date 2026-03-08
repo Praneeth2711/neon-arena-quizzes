@@ -123,40 +123,37 @@ const Landing = () => {
             <span className="text-xs font-heading text-muted-foreground">12,847 players online now</span>
           </motion.div>
 
-          {/* Main heading */}
-          <motion.h1
-            className="font-display text-5xl sm:text-6xl md:text-8xl font-bold leading-[0.95] mb-6 tracking-tight"
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.8, ease: "easeOut" }}
-          >
-            <span
-              className="inline-block"
-              style={{
-                background: "linear-gradient(135deg, hsl(263 70% 65%) 0%, hsl(187 94% 55%) 50%, hsl(330 81% 65%) 100%)",
-                backgroundSize: "200% 200%",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                animation: "gradient-shift 6s ease infinite",
-              }}
-            >
-              THE ULTIMATE
-            </span>
-            <br />
-            <span
-              className="inline-block"
-              style={{
-                background: "linear-gradient(135deg, hsl(187 94% 55%) 0%, hsl(330 81% 65%) 50%, hsl(263 70% 65%) 100%)",
-                backgroundSize: "200% 200%",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                animation: "gradient-shift 6s ease infinite",
-                animationDelay: "0.5s",
-              }}
-            >
-              QUIZ ARENA
-            </span>
-          </motion.h1>
+          {/* Main heading - letter stagger animation */}
+          <h1 className="font-display text-5xl sm:text-6xl md:text-8xl font-bold leading-[0.95] mb-6 tracking-tight">
+            {["THE ULTIMATE", "QUIZ ARENA"].map((line, lineIdx) => (
+              <span key={lineIdx} className="block">
+                {line.split("").map((letter, i) => (
+                  <motion.span
+                    key={`${lineIdx}-${i}`}
+                    className="inline-block"
+                    initial={{ opacity: 0, y: 50, rotateX: -90 }}
+                    animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                    transition={{
+                      delay: 0.4 + (lineIdx * line.length + i) * 0.035,
+                      duration: 0.5,
+                      ease: "easeOut",
+                    }}
+                    style={{
+                      background: lineIdx === 0
+                        ? "linear-gradient(135deg, hsl(263 70% 65%) 0%, hsl(187 94% 55%) 50%, hsl(330 81% 65%) 100%)"
+                        : "linear-gradient(135deg, hsl(187 94% 55%) 0%, hsl(330 81% 65%) 50%, hsl(263 70% 65%) 100%)",
+                      backgroundSize: "200% 200%",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      animation: "gradient-shift 6s ease infinite",
+                    }}
+                  >
+                    {letter === " " ? "\u00A0" : letter}
+                  </motion.span>
+                ))}
+              </span>
+            ))}
+          </h1>
 
           {/* Subtitle */}
           <motion.p
