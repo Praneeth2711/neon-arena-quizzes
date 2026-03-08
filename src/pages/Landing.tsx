@@ -44,7 +44,7 @@ const Landing = () => {
             <span className="text-[15px] font-semibold text-foreground tracking-tight">QuizArena</span>
           </div>
           <div className="hidden md:flex items-center gap-8">
-            {["Features", "Leaderboard", "Pricing"].map((item, i) => (
+            {["Features", "Leaderboard"].map((item, i) => (
               <motion.a
                 key={item}
                 href={`#${item.toLowerCase()}`}
