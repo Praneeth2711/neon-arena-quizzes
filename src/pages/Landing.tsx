@@ -44,7 +44,7 @@ const fadeUp = {
   show: (delay: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay, duration: 0.6, ease: "easeOut" },
+    transition: { delay, duration: 0.6, ease: "easeOut" as const },
   }),
 };
 
