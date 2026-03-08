@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import { Zap, Trophy, User, Home, Crosshair } from "lucide-react";
-import CustomCursor from "../components/animations/CustomCursor";
+import CustomCursor from "../../components/animations/CustomCursor";
 
 const NAV = [
   { path: "/", label: "Home", icon: Home },
