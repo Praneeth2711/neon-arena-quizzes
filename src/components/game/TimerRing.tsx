@@ -6,16 +6,16 @@ interface TimerRingProps {
   size?: number;
 }
 
-const TimerRing = ({ timeLeft, totalTime, size = 68 }: TimerRingProps) => {
+const TimerRing = ({ timeLeft, totalTime, size = 64 }: TimerRingProps) => {
   const progress = timeLeft / totalTime;
-  const radius = (size - 8) / 2;
+  const radius = (size - 6) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference * (1 - progress);
 
   const color = progress > 0.5
-    ? "hsl(155, 70%, 45%)"
+    ? "hsl(160, 84%, 39%)"
     : progress > 0.2
-      ? "hsl(38, 92%, 55%)"
+      ? "hsl(38, 92%, 50%)"
       : "hsl(0, 84%, 60%)";
 
   return (
@@ -23,21 +23,20 @@ const TimerRing = ({ timeLeft, totalTime, size = 68 }: TimerRingProps) => {
       <svg width={size} height={size} className="transform -rotate-90">
         <circle
           cx={size / 2} cy={size / 2} r={radius}
-          fill="none" stroke="hsl(235, 15%, 15%)" strokeWidth="3"
+          fill="none" stroke="hsl(214, 32%, 91%)" strokeWidth="3"
         />
         <motion.circle
           cx={size / 2} cy={size / 2} r={radius}
           fill="none" stroke={color} strokeWidth="3" strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
-          style={{ filter: `drop-shadow(0 0 6px ${color})` }}
           transition={{ duration: 0.4 }}
         />
       </svg>
       <motion.div
-        className="absolute inset-0 flex items-center justify-center font-display text-base font-bold"
+        className="absolute inset-0 flex items-center justify-center text-sm font-bold"
         style={{ color }}
-        animate={timeLeft <= 5 && timeLeft > 0 ? { scale: [1, 1.2, 1] } : {}}
+        animate={timeLeft <= 5 && timeLeft > 0 ? { scale: [1, 1.15, 1] } : {}}
         transition={{ duration: 0.4, repeat: timeLeft <= 5 ? Infinity : 0 }}
       >
         {timeLeft}

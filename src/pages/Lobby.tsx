@@ -2,9 +2,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppShell from "../components/layout/AppShell";
-import FloatingParticles from "../components/animations/FloatingParticles";
-import AnimatedButton from "../components/animations/AnimatedButton";
-import { Users, Zap, Flame, Clock, Star } from "lucide-react";
+import { Users, Clock, ArrowRight } from "lucide-react";
 
 const ROOMS = [
   { id: "1", name: "Quantum Physics", players: 8, max: 10, status: "live" as const, category: "Science", difficulty: "Hard" },
@@ -20,10 +18,10 @@ const ROOMS = [
 const FILTERS = ["All", "Live", "Waiting"];
 
 const difficultyColors: Record<string, string> = {
-  Easy: "text-success",
-  Medium: "text-warning",
-  Hard: "text-accent",
-  Expert: "text-destructive",
+  Easy: "text-success bg-success/10",
+  Medium: "text-warning bg-warning/10",
+  Hard: "text-primary bg-primary/10",
+  Expert: "text-destructive bg-destructive/10",
 };
 
 const Lobby = () => {
@@ -38,100 +36,85 @@ const Lobby = () => {
 
   return (
     <AppShell>
-      <div className="relative min-h-screen py-10 px-4">
-        <FloatingParticles count={25} />
-        <div className="max-w-6xl mx-auto relative z-10">
+      <div className="min-h-screen py-10 px-4">
+        <div className="max-w-5xl mx-auto">
           {/* Header */}
-          <motion.div className="mb-10" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="h-px w-6 bg-primary/40" />
-              <span className="text-[10px] font-mono uppercase tracking-[0.4em] text-primary/70">Arena</span>
-            </div>
-            <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground tracking-wider">
-              GAME LOBBY
-            </h1>
-            <p className="text-sm text-muted-foreground mt-2 font-mono">Select a room and enter the arena</p>
+          <motion.div className="mb-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">Game Lobby</h1>
+            <p className="text-muted-foreground mt-2">Find a room and start playing</p>
           </motion.div>
 
           {/* Filters */}
-          <div className="flex gap-2 mb-8">
+          <div className="flex gap-2 mb-6">
             {FILTERS.map((f) => (
               <motion.button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-4 py-2 rounded-lg text-xs font-mono uppercase tracking-wider transition-all ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   filter === f
-                    ? "bg-primary/15 text-primary border border-primary/30 neon-glow-purple"
-                    : "glass text-muted-foreground hover:text-foreground"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground hover:text-foreground"
                 }`}
-                whileHover={{ scale: 1.05, y: -1 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                {f === "Live" && <span className="inline-block w-1.5 h-1.5 rounded-full bg-destructive mr-1.5 animate-pulse" />}
+                {f === "Live" && <span className="inline-block w-1.5 h-1.5 rounded-full bg-success mr-1.5 animate-pulse" />}
                 {f}
               </motion.button>
             ))}
           </div>
 
           {/* Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((room, i) => (
               <motion.div
                 key={room.id}
-                className="glass-neon hud-corners p-5 group relative overflow-hidden"
-                initial={{ opacity: 0, y: 30 }}
+                className="card-premium p-5 group"
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06, duration: 0.4, ease: "easeOut" as const }}
-                whileHover={{
-                  y: -6,
-                  rotateX: 3,
-                  rotateY: -2,
-                  boxShadow: "0 0 35px hsl(263 70% 58% / 0.15)",
-                }}
-                style={{ transformPerspective: 800 }}
+                transition={{ delay: i * 0.05 }}
+                whileHover={{ y: -4 }}
               >
-                {/* Animated top accent */}
-                <motion.div
-                  className="absolute top-0 left-0 right-0 h-[2px] origin-left"
-                  style={{ background: "linear-gradient(90deg, hsl(263 70% 58%), hsl(192 95% 50%))" }}
-                  initial={{ scaleX: 0 }}
-                  whileHover={{ scaleX: 1 }}
-                  transition={{ duration: 0.3 }}
-                />
-
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-heading text-sm font-semibold text-foreground truncate">{room.name}</h3>
-                    <p className="text-[10px] font-mono text-muted-foreground mt-0.5">{room.category}</p>
+                    <h3 className="text-base font-semibold text-foreground truncate">{room.name}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">{room.category}</p>
                   </div>
-                  <span className={`text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                     room.status === "live"
-                      ? "border-destructive/30 text-destructive bg-destructive/10"
-                      : "border-secondary/30 text-secondary bg-secondary/10"
+                      ? "bg-success/10 text-success"
+                      : "bg-primary/10 text-primary"
                   }`}>
                     {room.status === "live" && (
                       <motion.span
-                        className="inline-block w-1 h-1 rounded-full bg-destructive mr-1"
+                        className="inline-block w-1.5 h-1.5 rounded-full bg-success mr-1"
                         animate={{ opacity: [1, 0.3, 1] }}
-                        transition={{ duration: 0.8, repeat: Infinity }}
+                        transition={{ duration: 1, repeat: Infinity }}
                       />
                     )}
                     {room.status}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-3 text-[10px] font-mono text-muted-foreground mb-4">
+                <div className="flex items-center gap-3 text-sm text-muted-foreground mb-4">
                   <span className="flex items-center gap-1">
-                    <Users className="w-3 h-3" />
+                    <Users className="w-3.5 h-3.5" />
                     {room.players}/{room.max}
                   </span>
-                  <span className={difficultyColors[room.difficulty]}>{room.difficulty}</span>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${difficultyColors[room.difficulty]}`}>
+                    {room.difficulty}
+                  </span>
                 </div>
 
-                <AnimatedButton variant="primary" size="sm" className="w-full" onClick={() => navigate("/room")}>
-                  <Zap className="w-3.5 h-3.5" />
-                  Join Arena
-                </AnimatedButton>
+                <motion.button
+                  onClick={() => navigate("/room")}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                >
+                  Join Room
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </motion.button>
               </motion.div>
             ))}
           </div>

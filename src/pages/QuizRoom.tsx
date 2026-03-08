@@ -1,16 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import AppShell from "../components/layout/AppShell";
 import QuizCard from "../components/game/QuizCard";
 import AnimatedLeaderboard from "../components/game/AnimatedLeaderboard";
 import ChatPanel from "../components/game/ChatPanel";
-import PowerUpBar from "../components/game/PowerUpBar";
-import FloatingParticles from "../components/animations/FloatingParticles";
 
 const QUESTIONS = [
   { question: "What is the speed of light in vacuum?", options: ["299,792 km/s", "150,000 km/s", "3,000,000 km/s", "1,080,000 km/h"], correct: 0 },
   { question: "Which planet has the most moons?", options: ["Jupiter", "Saturn", "Uranus", "Neptune"], correct: 1 },
-  { question: "Who created JavaScript?", options: ["Python", "Java", "Brendan Eich", "Tim Berners-Lee"], correct: 2 },
+  { question: "Who created JavaScript?", options: ["Guido van Rossum", "James Gosling", "Brendan Eich", "Tim Berners-Lee"], correct: 2 },
 ];
 
 const PLAYERS = [
@@ -64,40 +62,36 @@ const QuizRoom = () => {
 
   return (
     <AppShell>
-      <div className="min-h-screen py-6 px-4 relative">
-        <FloatingParticles count={15} />
-        <div className="max-w-7xl mx-auto relative z-10">
-          {/* HUD header */}
+      <div className="min-h-screen py-8 px-4">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
           <motion.div
             className="flex items-center justify-between mb-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
-            <div className="flex items-center gap-2">
-              <div className="h-px w-4 bg-primary/40" />
-              <span className="text-[9px] font-mono uppercase tracking-[0.4em] text-primary/60">Live Match</span>
+            <div>
+              <h1 className="text-lg font-semibold text-foreground">Science Showdown</h1>
+              <p className="text-sm text-muted-foreground">Live Match • {PLAYERS.length} players</p>
             </div>
-            <span className="text-[9px] font-mono text-muted-foreground">
-              Q{qIdx + 1}/{QUESTIONS.length} • Science Showdown
+            <span className="text-sm text-muted-foreground">
+              Question {qIdx + 1}/{QUESTIONS.length}
             </span>
           </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_260px] gap-5">
-            {/* Leaderboard */}
+          <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_280px] gap-5">
             <motion.div
               className="hidden lg:block"
-              initial={{ opacity: 0, x: -30 }}
+              initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
             >
               <AnimatedLeaderboard players={players} />
             </motion.div>
 
-            {/* Quiz */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="space-y-5"
             >
               <QuizCard
                 question={q.question}
@@ -110,13 +104,11 @@ const QuizRoom = () => {
                 correctAnswer={showCorrect ? q.correct : undefined}
                 onAnswer={answer}
               />
-              <PowerUpBar />
             </motion.div>
 
-            {/* Chat */}
             <motion.div
               className="hidden lg:block"
-              initial={{ opacity: 0, x: 30 }}
+              initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
             >
