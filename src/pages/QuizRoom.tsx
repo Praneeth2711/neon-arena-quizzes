@@ -1,27 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import AppShell from "../components/layout/AppShell";
 import QuizCard from "../components/game/QuizCard";
 import AnimatedLeaderboard from "../components/game/AnimatedLeaderboard";
 import ChatPanel from "../components/game/ChatPanel";
 import PowerUpBar from "../components/game/PowerUpBar";
+import FloatingParticles from "../components/animations/FloatingParticles";
 
 const QUESTIONS = [
-  {
-    question: "What is the speed of light in vacuum?",
-    options: ["299,792 km/s", "150,000 km/s", "3,000,000 km/s", "1,080,000 km/h"],
-    correct: 0,
-  },
-  {
-    question: "Which planet has the most moons?",
-    options: ["Jupiter", "Saturn", "Uranus", "Neptune"],
-    correct: 1,
-  },
-  {
-    question: "What programming language was created by Brendan Eich?",
-    options: ["Python", "Java", "JavaScript", "TypeScript"],
-    correct: 2,
-  },
+  { question: "What is the speed of light in vacuum?", options: ["299,792 km/s", "150,000 km/s", "3,000,000 km/s", "1,080,000 km/h"], correct: 0 },
+  { question: "Which planet has the most moons?", options: ["Jupiter", "Saturn", "Uranus", "Neptune"], correct: 1 },
+  { question: "Who created JavaScript?", options: ["Python", "Java", "Brendan Eich", "Tim Berners-Lee"], correct: 2 },
 ];
 
 const PLAYERS = [
@@ -33,55 +22,67 @@ const PLAYERS = [
 ];
 
 const QuizRoom = () => {
-  const [currentQ, setCurrentQ] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [qIdx, setQIdx] = useState(0);
+  const [selected, setSelected] = useState<number | null>(null);
   const [showCorrect, setShowCorrect] = useState(false);
   const [timeLeft, setTimeLeft] = useState(20);
   const [players, setPlayers] = useState(PLAYERS);
 
-  const q = QUESTIONS[currentQ];
+  const q = QUESTIONS[qIdx];
 
-  const nextQuestion = useCallback(() => {
-    if (currentQ < QUESTIONS.length - 1) {
-      setCurrentQ((prev) => prev + 1);
-      setSelectedAnswer(null);
+  const nextQ = useCallback(() => {
+    if (qIdx < QUESTIONS.length - 1) {
+      setQIdx((p) => p + 1);
+      setSelected(null);
       setShowCorrect(false);
       setTimeLeft(20);
     }
-  }, [currentQ]);
+  }, [qIdx]);
 
   useEffect(() => {
-    if (timeLeft <= 0 || selectedAnswer !== null) return;
-    const timer = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [timeLeft, selectedAnswer]);
+    if (timeLeft <= 0 || selected !== null) return;
+    const t = setTimeout(() => setTimeLeft((v) => v - 1), 1000);
+    return () => clearTimeout(t);
+  }, [timeLeft, selected]);
 
   useEffect(() => {
-    if (timeLeft === 0 && selectedAnswer === null) {
-      setSelectedAnswer(-1);
+    if (timeLeft === 0 && selected === null) {
+      setSelected(-1);
       setShowCorrect(true);
-      setTimeout(nextQuestion, 2000);
+      setTimeout(nextQ, 2000);
     }
-  }, [timeLeft, selectedAnswer, nextQuestion]);
+  }, [timeLeft, selected, nextQ]);
 
-  const handleAnswer = (index: number) => {
-    setSelectedAnswer(index);
+  const answer = (i: number) => {
+    setSelected(i);
     setShowCorrect(true);
-
-    if (index === q.correct) {
-      setPlayers((prev) =>
-        prev.map((p) => (p.name === "You" ? { ...p, score: p.score + 300 } : p))
-      );
+    if (i === q.correct) {
+      setPlayers((prev) => prev.map((p) => (p.name === "You" ? { ...p, score: p.score + 300 } : p)));
     }
-
-    setTimeout(nextQuestion, 2000);
+    setTimeout(nextQ, 2000);
   };
 
   return (
     <AppShell>
-      <div className="min-h-screen py-8 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-[250px_1fr_280px] gap-6">
+      <div className="min-h-screen py-6 px-4 relative">
+        <FloatingParticles count={15} />
+        <div className="max-w-7xl mx-auto relative z-10">
+          {/* HUD header */}
+          <motion.div
+            className="flex items-center justify-between mb-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <div className="flex items-center gap-2">
+              <div className="h-px w-4 bg-primary/40" />
+              <span className="text-[9px] font-mono uppercase tracking-[0.4em] text-primary/60">Live Match</span>
+            </div>
+            <span className="text-[9px] font-mono text-muted-foreground">
+              Q{qIdx + 1}/{QUESTIONS.length} • Science Showdown
+            </span>
+          </motion.div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_260px] gap-5">
             {/* Leaderboard */}
             <motion.div
               className="hidden lg:block"
@@ -96,18 +97,18 @@ const QuizRoom = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="space-y-6"
+              className="space-y-5"
             >
               <QuizCard
                 question={q.question}
                 options={q.options}
-                questionNumber={currentQ + 1}
+                questionNumber={qIdx + 1}
                 totalQuestions={QUESTIONS.length}
                 timeLeft={timeLeft}
                 totalTime={20}
-                selectedAnswer={selectedAnswer}
+                selectedAnswer={selected}
                 correctAnswer={showCorrect ? q.correct : undefined}
-                onAnswer={handleAnswer}
+                onAnswer={answer}
               />
               <PowerUpBar />
             </motion.div>
