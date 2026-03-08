@@ -1,0 +1,1 @@
+ALTER TABLE public.chat_messages ALTER COLUMN room_id TYPE text USING room_id::text;
