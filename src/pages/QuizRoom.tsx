@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import AppShell from "../components/layout/AppShell";
 import QuizCard from "../components/game/QuizCard";
@@ -21,6 +22,8 @@ const PLAYERS = [
 ];
 
 const QuizRoom = () => {
+  const { roomId } = useParams();
+  const currentRoomId = roomId ?? "demo-room";
   const [qIdx, setQIdx] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [showCorrect, setShowCorrect] = useState(false);
@@ -161,7 +164,7 @@ const QuizRoom = () => {
               transition={{ delay: 0.2 }}
               className="sticky top-24"
             >
-              <ChatPanel />
+              <ChatPanel roomId={currentRoomId} />
             </motion.div>
           </div>
 
@@ -209,7 +212,7 @@ const QuizRoom = () => {
                   transition={{ duration: 0.2 }}
                   className="min-h-[400px]"
                 >
-                  <ChatPanel />
+                  <ChatPanel roomId={currentRoomId} />
                 </motion.div>
               )}
             </AnimatePresence>
