@@ -5,9 +5,9 @@ import { Users, Trophy, Zap, ArrowRight, Play, Globe, Shield, Clock, MessageCirc
 import { useRef } from "react";
 
 const STATS = [
-  { value: 50000, suffix: "+", label: "Active Players" },
-  { value: 1000000, suffix: "+", label: "Games Played" },
-  { value: 20, suffix: "+", label: "Categories" },
+  { value: 500, suffix: "+", label: "Active Players" },
+  { value: 1000, suffix: "+", label: "Games Played" },
+  { value: 10, suffix: "+", label: "Categories" },
   { value: 99, suffix: ".9%", label: "Uptime" },
 ];
 
