@@ -18,7 +18,7 @@ const PowerUpBar = ({ onActivate }: { onActivate?: (id: string) => void }) => {
   };
 
   return (
-    <div className="flex gap-3 justify-center">
+    <div className="flex gap-3 justify-center mt-4">
       {POWERUPS.map((pu) => {
         const isUsed = used.has(pu.id);
         const Icon = pu.icon;
@@ -27,17 +27,12 @@ const PowerUpBar = ({ onActivate }: { onActivate?: (id: string) => void }) => {
             key={pu.id}
             onClick={() => activate(pu.id)}
             disabled={isUsed}
-            className={`glass-neon p-3 rounded-xl flex flex-col items-center gap-1 min-w-[70px] transition-all ${isUsed ? "opacity-25 cursor-default" : "cursor-pointer"}`}
-            whileHover={!isUsed ? { scale: 1.12, boxShadow: "0 0 25px hsl(263 70% 58% / 0.3)" } : {}}
-            whileTap={!isUsed ? { scale: 0.9 } : {}}
+            className={`card-premium p-3 rounded-xl flex flex-col items-center gap-1 min-w-[70px] transition-all ${isUsed ? "opacity-30 cursor-default" : "cursor-pointer"}`}
+            whileHover={!isUsed ? { scale: 1.05, y: -2 } : {}}
+            whileTap={!isUsed ? { scale: 0.95 } : {}}
           >
-            <motion.div
-              animate={!isUsed ? { filter: ["brightness(1)", "brightness(1.5)", "brightness(1)"] } : {}}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              <Icon className="w-5 h-5 text-primary" />
-            </motion.div>
-            <span className="text-[9px] font-mono text-foreground">{pu.name}</span>
+            <Icon className={`w-5 h-5 ${isUsed ? "text-muted-foreground" : "text-primary"}`} />
+            <span className="text-xs font-medium text-foreground">{pu.name}</span>
           </motion.button>
         );
       })}

@@ -31,10 +31,10 @@ const CountUp = ({ target, suffix = "", duration = 2 }: CountUpProps) => {
   return (
     <motion.span
       ref={ref}
-      className="font-display tabular-nums"
-      initial={{ opacity: 0, scale: 0.5 }}
-      animate={isInView ? { opacity: 1, scale: 1 } : {}}
-      transition={{ duration: 0.5, ease: "easeOut" as const }}
+      className="tabular-nums"
+      initial={{ opacity: 0 }}
+      animate={isInView ? { opacity: 1 } : {}}
+      transition={{ duration: 0.3 }}
     >
       {count.toLocaleString()}{suffix}
     </motion.span>

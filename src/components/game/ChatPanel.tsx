@@ -33,24 +33,24 @@ const ChatPanel = () => {
   };
 
   return (
-    <div className="glass-neon hud-corners flex flex-col h-full max-h-[480px]">
-      <div className="p-3 border-b border-border/20">
-        <h3 className="text-[10px] font-mono uppercase tracking-[0.3em] text-primary/70 flex items-center gap-2">
-          <MessageCircle className="w-3.5 h-3.5" />
+    <div className="card-premium flex flex-col h-full max-h-[480px]">
+      <div className="p-4 border-b border-border">
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+          <MessageCircle className="w-4 h-4 text-primary" />
           Live Chat
         </h3>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-1.5 relative">
+      <div className="flex-1 overflow-y-auto p-4 space-y-2 relative">
         <AnimatePresence>
           {messages.map((msg) => (
             <motion.div
               key={msg.id}
-              initial={{ opacity: 0, y: 8, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              className="text-xs"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-sm"
             >
-              <span className="font-mono text-primary font-medium">{msg.user}</span>
+              <span className="font-medium text-primary">{msg.user}</span>
               <span className="text-muted-foreground ml-1.5">{msg.text}</span>
             </motion.div>
           ))}
@@ -72,7 +72,7 @@ const ChatPanel = () => {
         </AnimatePresence>
       </div>
 
-      <div className="px-3 py-1.5 flex gap-1 border-t border-border/15">
+      <div className="px-4 py-2 flex gap-1 border-t border-border">
         {EMOJIS.map((e) => (
           <motion.button
             key={e}
@@ -85,21 +85,21 @@ const ChatPanel = () => {
         ))}
       </div>
 
-      <div className="p-3 border-t border-border/20 flex gap-2">
+      <div className="p-3 border-t border-border flex gap-2">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
-          placeholder="Type..."
-          className="flex-1 bg-muted/30 text-foreground text-xs rounded-lg px-3 py-2 outline-none border border-border/20 focus:border-primary/40 transition-colors font-mono placeholder:text-muted-foreground"
+          placeholder="Type a message..."
+          className="flex-1 bg-muted text-foreground text-sm rounded-lg px-3 py-2 outline-none border border-border focus:border-primary/50 transition-colors placeholder:text-muted-foreground"
         />
         <motion.button
           onClick={send}
-          className="p-2 rounded-lg bg-primary/15 text-primary"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+          className="p-2 rounded-lg bg-primary text-primary-foreground"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
-          <Send className="w-3.5 h-3.5" />
+          <Send className="w-4 h-4" />
         </motion.button>
       </div>
     </div>
