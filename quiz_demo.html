@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neon Arena Quiz — JS Demo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+    }
+    h1 { font-size: 2rem; font-weight: 800; background: linear-gradient(135deg,#6366f1,#8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px; }
+    .subtitle { color: #94a3b8; font-size: 0.9rem; margin-bottom: 32px; }
+    .card {
+      background: #1e1e2e;
+      border: 1px solid #2d2d3f;
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%;
+      max-width: 560px;
+      box-shadow: 0 8px 32px rgba(99,102,241,0.08);
+    }
+    .meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .q-num { font-size: 0.8rem; color: #94a3b8; }
+    #timer {
+      width: 48px; height: 48px; border-radius: 50%;
+      border: 3px solid #f59e0b;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 1rem; color: #f59e0b;
+      transition: border-color 0.3s, color 0.3s;
+    }
+    #timer.danger { border-color: #ef4444; color: #ef4444; }
+    .progress-bar { height: 4px; background: #2d2d3f; border-radius: 4px; margin-bottom: 20px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg,#6366f1,#8b5cf6); border-radius: 4px; transition: width 0.5s ease; }
+    #question { font-size: 1.1rem; font-weight: 600; line-height: 1.5; margin-bottom: 20px; min-height: 56px; }
+    .options { display: grid; gap: 10px; }
+    .option {
+      padding: 14px 16px; border-radius: 12px;
+      border: 1.5px solid #2d2d3f;
+      cursor: pointer; font-size: 0.9rem; font-weight: 500;
+      display: flex; align-items: center; gap: 10px;
+      transition: all 0.2s ease;
+      background: transparent; color: #e2e8f0;
+    }
+    .option:hover:not(:disabled) { border-color: #6366f1; background: rgba(99,102,241,0.06); transform: translateY(-1px); }
+    .option .label { width: 26px; height: 26px; border-radius: 8px; background: #2d2d3f; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #94a3b8; flex-shrink: 0; }
+    .option.correct { border-color: #10b981; background: rgba(16,185,129,0.08); color: #10b981; }
+    .option.correct .label { background: #10b981; color: #fff; }
+    .option.wrong { border-color: #ef4444; background: rgba(239,68,68,0.08); color: #ef4444; }
+    .option.wrong .label { background: #ef4444; color: #fff; }
+    .option:disabled { cursor: not-allowed; }
+    #feedback { margin-top: 16px; text-align: center; font-size: 0.9rem; font-weight: 600; min-height: 24px; }
+    #feedback.correct { color: #10b981; }
+    #feedback.wrong   { color: #ef4444; }
+    #feedback.timeout { color: #f59e0b; }
+
+    /* Score bar */
+    .score-bar { display: flex; gap: 12px; margin-bottom: 20px; font-size: 0.82rem; }
+    .score-chip { background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.2); border-radius: 8px; padding: 6px 14px; color: #a5b4fc; }
+
+    /* Leaderboard */
+    .leaderboard { margin-top: 32px; width: 100%; max-width: 560px; }
+    .leaderboard h2 { font-size: 1rem; font-weight: 700; margin-bottom: 12px; color: #c4b5fd; }
+    .lb-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px; border-radius: 10px;
+      background: #1e1e2e; border: 1px solid #2d2d3f;
+      margin-bottom: 6px; transition: background 0.2s;
+    }
+    .lb-row.you { background: rgba(99,102,241,0.08); border-color: rgba(99,102,241,0.3); }
+    .lb-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .lb-name { flex: 1; font-size: 0.9rem; }
+    .lb-score { font-size: 0.85rem; font-weight: 700; color: #a5b4fc; font-variant-numeric: tabular-nums; }
+    .lb-rank { width: 24px; font-size: 0.8rem; font-weight: 700; color: #64748b; text-align: center; }
+
+    /* Results */
+    #results { display: none; width: 100%; max-width: 560px; }
+    .result-card { background: #1e1e2e; border: 1px solid #2d2d3f; border-radius: 16px; padding: 36px; text-align: center; }
+    .result-card h2 { font-size: 1.6rem; font-weight: 800; margin-bottom: 8px; }
+    .big-score { font-size: 3rem; font-weight: 900; background: linear-gradient(135deg,#6366f1,#8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .result-stats { display: flex; justify-content: center; gap: 24px; margin: 20px 0; }
+    .stat { text-align: center; }
+    .stat-num { font-size: 1.4rem; font-weight: 700; color: #c4b5fd; }
+    .stat-lbl { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
+    #restart-btn {
+      margin-top: 20px; padding: 12px 32px; border-radius: 12px;
+      background: linear-gradient(135deg,#6366f1,#8b5cf6);
+      color: #fff; font-weight: 700; font-size: 0.95rem;
+      border: none; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+    }
+    #restart-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99,102,241,0.35); }
+  </style>
+</head>
+<body>
+
+  <h1>⚡ QuizArena</h1>
+  <p class="subtitle">Neon Arena Quizzes — JavaScript Demo for FSD Internals</p>
+
+  <!-- QUIZ PANEL -->
+  <div id="quiz-panel">
+    <div class="score-bar">
+      <div class="score-chip" id="score-chip">Score: 0</div>
+      <div class="score-chip" id="correct-chip">✓ 0 / 0</div>
+    </div>
+
+    <div class="card" id="quiz-card">
+      <div class="meta">
+        <span class="q-num" id="q-num">Question 1 / 5</span>
+        <div id="timer">20</div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      <div id="question">Loading…</div>
+      <div class="options" id="options"></div>
+      <div id="feedback"></div>
+    </div>
+
+    <div class="leaderboard">
+      <h2>🏆 Live Leaderboard</h2>
+      <div id="leaderboard-rows"></div>
+    </div>
+  </div>
+
+  <!-- RESULTS PANEL -->
+  <div id="results">
+    <div class="result-card">
+      <h2>Game Over! 🎉</h2>
+      <p style="color:#94a3b8;margin-bottom:16px">Here's how you did</p>
+      <div class="big-score" id="final-score">0</div>
+      <div class="result-stats">
+        <div class="stat"><div class="stat-num" id="res-correct">0</div><div class="stat-lbl">Correct</div></div>
+        <div class="stat"><div class="stat-num" id="res-total">0</div><div class="stat-lbl">Total</div></div>
+        <div class="stat"><div class="stat-num" id="res-acc">0%</div><div class="stat-lbl">Accuracy</div></div>
+      </div>
+      <button id="restart-btn" onclick="initGame()">Play Again</button>
+    </div>
+  </div>
+
+<script>
+// ─────────────────────────────────────────────
+// DATA  (mirrors QuizRoom.tsx QUESTIONS array)
+// ─────────────────────────────────────────────
+const QUESTIONS = [
+  { question: "What is the speed of light in vacuum?",         options: ["299,792 km/s","150,000 km/s","3,000,000 km/s","1,080,000 km/h"], correct: 0 },
+  { question: "Which planet has the most moons?",              options: ["Jupiter","Saturn","Uranus","Neptune"],                           correct: 1 },
+  { question: "Who created JavaScript?",                       options: ["Guido van Rossum","James Gosling","Brendan Eich","Tim Berners-Lee"], correct: 2 },
+  { question: "What does HTML stand for?",                     options: ["HyperText Markup Language","High Text Machine Language","HyperTool Markup Logic","HyperText Model Language"], correct: 0 },
+  { question: "Which data structure uses LIFO order?",         options: ["Queue","Linked List","Stack","Tree"],                            correct: 2 },
+];
+
+const MOCK_PLAYERS = [
+  { name: "NeonKnight", score: 2400, color: "#6366f1" },
+  { name: "CyberQueen", score: 2200, color: "#8b5cf6" },
+  { name: "PixelMaster", score: 1800, color: "#3b82f6" },
+  { name: "You",        score: 0,    color: "#10b981" },
+  { name: "DataWizard", score: 1500, color: "#ec4899" },
+];
+
+// ─────────────────────────────────────────────
+// STATE  (plain-JS equivalent of React useState)
+// ─────────────────────────────────────────────
+let state = {};
+
+function initGame() {
+  state = {
+    qIdx:       0,
+    score:      0,
+    correct:    0,
+    answered:   0,
+    timeLeft:   20,
+    locked:     false,
+    timer:      null,
+    players:    MOCK_PLAYERS.map(p => ({ ...p, score: p.name === "You" ? 0 : p.score })),
+  };
+
+  document.getElementById("quiz-panel").style.display = "";
+  document.getElementById("results").style.display    = "none";
+  renderQuestion();
+  renderLeaderboard();
+}
+
+// ─────────────────────────────────────────────
+// RENDER — DOM manipulation
+// ─────────────────────────────────────────────
+function renderQuestion() {
+  const q = QUESTIONS[state.qIdx];
+  clearInterval(state.timer);
+  state.timeLeft = 20;
+  state.locked   = false;
+
+  // Progress
+  const pct = (state.qIdx / QUESTIONS.length) * 100;
+  document.getElementById("progress-fill").style.width = pct + "%";
+  document.getElementById("q-num").textContent = `Question ${state.qIdx + 1} / ${QUESTIONS.length}`;
+  document.getElementById("question").textContent = q.question;
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("feedback").className   = "";
+  updateScoreChips();
+  renderOptions(q);
+  startTimer();
+}
+
+function renderOptions(q) {
+  const container = document.getElementById("options");
+  container.innerHTML = "";
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement("button");
+    btn.className = "option";
+    btn.id = "opt-" + i;
+    btn.innerHTML = `<span class="label">${String.fromCharCode(65 + i)}</span>${opt}`;
+    btn.addEventListener("click", () => handleAnswer(i));
+    container.appendChild(btn);
+  });
+}
+
+function renderLeaderboard() {
+  const sorted = [...state.players].sort((a, b) => b.score - a.score);
+  const container = document.getElementById("leaderboard-rows");
+  container.innerHTML = "";
+  sorted.forEach((p, i) => {
+    const row = document.createElement("div");
+    row.className = "lb-row" + (p.name === "You" ? " you" : "");
+    row.innerHTML = `
+      <div class="lb-rank">${i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "#" + (i + 1)}</div>
+      <div class="lb-avatar" style="background:${p.color}">${p.name[0]}</div>
+      <div class="lb-name">${p.name}</div>
+      <div class="lb-score">${p.score.toLocaleString()}</div>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function updateScoreChips() {
+  document.getElementById("score-chip").textContent    = "Score: " + state.score.toLocaleString();
+  document.getElementById("correct-chip").textContent  = `✓ ${state.correct} / ${state.answered}`;
+}
+
+// ─────────────────────────────────────────────
+// TIMER — setInterval / clearInterval (mirrors useEffect in QuizRoom.tsx)
+// ─────────────────────────────────────────────
+function startTimer() {
+  const timerEl = document.getElementById("timer");
+  timerEl.className  = "";
+  timerEl.textContent = state.timeLeft;
+
+  state.timer = setInterval(() => {
+    state.timeLeft--;
+    timerEl.textContent = state.timeLeft;
+    if (state.timeLeft <= 5) timerEl.className = "danger";
+    if (state.timeLeft <= 0) {
+      clearInterval(state.timer);
+      if (!state.locked) timeUp();
+    }
+  }, 1000);
+}
+
+// ─────────────────────────────────────────────
+// GAME LOGIC — answer(), score calculation, next question
+// ─────────────────────────────────────────────
+function handleAnswer(index) {
+  if (state.locked) return;
+  state.locked = true;
+  clearInterval(state.timer);
+
+  const q = QUESTIONS[state.qIdx];
+  const isCorrect = index === q.correct;
+
+  // Calculate points with speed bonus (closure over timeLeft)
+  const points = isCorrect ? calculatePoints(state.timeLeft, 20) : 0;
+
+  state.answered++;
+  if (isCorrect) {
+    state.correct++;
+    state.score += points;
+  }
+
+  // Update "You" in players array (mirrors .map() in QuizRoom.tsx)
+  state.players = state.players.map(p =>
+    p.name === "You" ? { ...p, score: state.score } : p
+  );
+
+  showAnswerFeedback(index, q.correct, isCorrect, points);
+  updateScoreChips();
+  renderLeaderboard();
+
+  setTimeout(advanceQuestion, 2000);
+}
+
+function timeUp() {
+  state.locked = true;
+  state.answered++;
+  const q = QUESTIONS[state.qIdx];
+  showAnswerFeedback(-1, q.correct, false, 0);
+  const fb = document.getElementById("feedback");
+  fb.textContent = "⏰ Time's up!";
+  fb.className   = "timeout";
+  setTimeout(advanceQuestion, 2000);
+}
+
+function advanceQuestion() {
+  if (state.qIdx < QUESTIONS.length - 1) {
+    state.qIdx++;
+    renderQuestion();
+  } else {
+    showResults();
+  }
+}
+
+// ─────────────────────────────────────────────
+// HELPER FUNCTIONS
+// ─────────────────────────────────────────────
+function calculatePoints(timeLeft, totalTime) {
+  // Speed bonus: up to +100 pts
+  const base = 200;
+  const speedBonus = Math.round((timeLeft / totalTime) * 100);
+  return base + speedBonus;
+}
+
+function showAnswerFeedback(chosen, correct, isCorrect, points) {
+  // Mark options correct / wrong
+  QUESTIONS[state.qIdx].options.forEach((_, i) => {
+    const btn = document.getElementById("opt-" + i);
+    if (i === correct) btn.classList.add("correct");
+    else if (i === chosen) btn.classList.add("wrong");
+    btn.disabled = true;
+  });
+
+  const fb = document.getElementById("feedback");
+  if (isCorrect) {
+    fb.textContent = `✓ Correct! +${points} pts`;
+    fb.className   = "correct";
+  } else if (chosen !== -1) {
+    fb.textContent = "✗ Wrong answer!";
+    fb.className   = "wrong";
+  }
+}
+
+// ─────────────────────────────────────────────
+// RESULTS — show final score using closures over state
+// ─────────────────────────────────────────────
+function showResults() {
+  clearInterval(state.timer);
+  document.getElementById("quiz-panel").style.display = "none";
+  document.getElementById("results").style.display    = "";
+
+  const acc = state.answered > 0
+    ? Math.round((state.correct / state.answered) * 100)
+    : 0;
+
+  document.getElementById("final-score").textContent = state.score.toLocaleString();
+  document.getElementById("res-correct").textContent = state.correct;
+  document.getElementById("res-total").textContent   = state.answered;
+  document.getElementById("res-acc").textContent     = acc + "%";
+}
+
+// ─────────────────────────────────────────────
+// START THE GAME
+// ─────────────────────────────────────────────
+initGame();
+</script>
+</body>
+</html>
