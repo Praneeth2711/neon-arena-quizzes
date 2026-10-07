@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
-import { Zap, Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
+import { Zap, Mail, Lock, User, ArrowRight, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 const SignUp = () => {
@@ -11,7 +11,7 @@ const SignUp = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
+  const { signUp, demoSignIn } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,10 +20,21 @@ const SignUp = () => {
     if (!name || !email || !password) { setError("Please fill in all fields."); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
     setLoading(true);
-    const { error } = await signUp(email, password, name);
+    const { error, needsConfirmation } = await signUp(email, password, name);
     setLoading(false);
     if (error) { setError(error.message); return; }
-    toast.success("Account created! Check your email to confirm.");
+    if (needsConfirmation) {
+      toast.success("Account registered! Please check your email for confirmation (or sign in directly).", { duration: 6000 });
+      navigate("/signin");
+    } else {
+      toast.success("Account created successfully!");
+      navigate("/lobby");
+    }
+  };
+
+  const handleDemoSignIn = async () => {
+    await demoSignIn(name.trim() || "Praneeth");
+    toast.success(`Logged in as ${name.trim() || "Praneeth"} (Demo Account)`);
     navigate("/lobby");
   };
 
@@ -43,16 +54,31 @@ const SignUp = () => {
             >
               <Zap className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-foreground tracking-tight">QuizArena</span>
+            <span className="text-xl font-bold text-foreground tracking-tight">Neon Arena</span>
           </Link>
           <h1 className="text-2xl font-bold text-foreground">Create your account</h1>
-          <p className="text-muted-foreground text-sm mt-1">Join QuizArena and start competing</p>
+          <p className="text-muted-foreground text-sm mt-1">Join Neon Arena Quizzes and start competing</p>
         </div>
 
         <div className="card-premium p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
+              <div className="p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs leading-relaxed space-y-1.5">
+                <p className="font-medium">{error}</p>
+                {error.toLowerCase().includes("rate limit") && (
+                  <p className="text-muted-foreground text-[11px] leading-normal pt-1.5 border-t border-destructive/15">
+                    💡 <strong>Tip:</strong> If you already created an account with this email, try{" "}
+                    <Link to="/signin" className="text-primary font-semibold underline">
+                      Signing In
+                    </Link>{" "}
+                    or{" "}
+                    <Link to="/forgot-password" className="text-primary font-semibold underline">
+                      Reset Password
+                    </Link>
+                    .
+                  </p>
+                )}
+              </div>
             )}
             <div>
               <label className="text-sm font-medium text-foreground mb-1.5 block">Display Name</label>
@@ -96,7 +122,7 @@ const SignUp = () => {
             <motion.button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50 cursor-pointer shadow-sm"
               style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(262 83% 58%))" }}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
@@ -104,6 +130,27 @@ const SignUp = () => {
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Create Account <ArrowRight className="w-4 h-4" /></>}
             </motion.button>
           </form>
+
+          {/* Quick Demo Access */}
+          <div className="relative my-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border/60" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2.5 text-muted-foreground font-medium">Or test instantly</span>
+            </div>
+          </div>
+
+          <motion.button
+            type="button"
+            onClick={handleDemoSignIn}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-sm font-semibold transition-all cursor-pointer"
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+          >
+            <Sparkles className="w-4 h-4" />
+            Continue with Demo Account
+          </motion.button>
         </div>
 
         <p className="text-center text-sm text-muted-foreground mt-6">

@@ -41,7 +41,7 @@ const Landing = () => {
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}>
               <Zap className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span className="text-[15px] font-semibold text-foreground tracking-tight">QuizArena</span>
+            <span className="text-[15px] font-semibold text-foreground tracking-tight">Neon Arena</span>
           </div>
           <div className="hidden md:flex items-center gap-8">
             {["Features", "Leaderboard"].map((item, i) => (
@@ -793,12 +793,12 @@ const Landing = () => {
             <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}>
               <Zap className="w-3.5 h-3.5 text-primary-foreground" />
             </div>
-            <span className="text-[13px] font-semibold text-muted-foreground">QuizArena</span>
+            <span className="text-[13px] font-semibold text-muted-foreground">Neon Arena Quizzes</span>
           </div>
           <div className="flex items-center gap-6 text-[13px] text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">Features</a>
             <a href="#leaderboard" className="hover:text-foreground transition-colors">Leaderboard</a>
-            <span>© 2026 QuizArena</span>
+            <span>© 2026 Neon Arena Quizzes</span>
           </div>
         </div>
       </footer>

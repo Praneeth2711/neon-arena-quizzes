@@ -31,7 +31,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
             >
               <Zap className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span className="text-[15px] font-semibold text-foreground tracking-tight">QuizArena</span>
+            <span className="text-[15px] font-semibold text-foreground tracking-tight">Neon Arena</span>
           </Link>
 
           <div className="flex items-center gap-1">

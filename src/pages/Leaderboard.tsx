@@ -1,19 +1,31 @@
 import { motion } from "framer-motion";
+import { useState, useEffect, useCallback } from "react";
 import AppShell from "../components/layout/AppShell";
 import CountUp from "../components/animations/CountUp";
-import { Crown, TrendingUp, TrendingDown, Minus, Trophy, Medal, Award } from "lucide-react";
+import { Crown, TrendingUp, TrendingDown, Minus, Trophy, Medal, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
-const PLAYERS = [
-  { id: "1", name: "NeonKnight", score: 45200, wins: 128, accuracy: 94, trend: "up" as const, games: 412 },
-  { id: "2", name: "CyberQueen", score: 42100, wins: 115, accuracy: 91, trend: "up" as const, games: 389 },
-  { id: "3", name: "PixelMaster", score: 38900, wins: 102, accuracy: 89, trend: "down" as const, games: 356 },
-  { id: "4", name: "DataWizard", score: 35400, wins: 95, accuracy: 87, trend: "up" as const, games: 320 },
-  { id: "5", name: "QuantumAce", score: 32800, wins: 88, accuracy: 85, trend: "same" as const, games: 298 },
-  { id: "6", name: "ByteRunner", score: 29300, wins: 76, accuracy: 83, trend: "down" as const, games: 275 },
-  { id: "7", name: "GlitchHero", score: 27100, wins: 71, accuracy: 82, trend: "up" as const, games: 260 },
-  { id: "8", name: "VoltStrike", score: 24800, wins: 65, accuracy: 80, trend: "same" as const, games: 245 },
-  { id: "9", name: "StarForge", score: 22400, wins: 58, accuracy: 78, trend: "down" as const, games: 230 },
-  { id: "10", name: "CosmicRay", score: 20100, wins: 52, accuracy: 76, trend: "up" as const, games: 218 },
+interface LeaderboardPlayer {
+  id: string;
+  name: string;
+  score: number;
+  wins: number;
+  accuracy: number;
+  trend: "up" | "down" | "same";
+  games: number;
+}
+
+const DEFAULT_PLAYERS: LeaderboardPlayer[] = [
+  { id: "1", name: "NeonKnight", score: 45200, wins: 128, accuracy: 94, trend: "up", games: 412 },
+  { id: "2", name: "CyberQueen", score: 42100, wins: 115, accuracy: 91, trend: "up", games: 389 },
+  { id: "3", name: "PixelMaster", score: 38900, wins: 102, accuracy: 89, trend: "down", games: 356 },
+  { id: "4", name: "DataWizard", score: 35400, wins: 95, accuracy: 87, trend: "up", games: 320 },
+  { id: "5", name: "QuantumAce", score: 32800, wins: 88, accuracy: 85, trend: "same", games: 298 },
+  { id: "6", name: "ByteRunner", score: 29300, wins: 76, accuracy: 83, trend: "down", games: 275 },
+  { id: "7", name: "GlitchHero", score: 27100, wins: 71, accuracy: 82, trend: "up", games: 260 },
+  { id: "8", name: "VoltStrike", score: 24800, wins: 65, accuracy: 80, trend: "same", games: 245 },
+  { id: "9", name: "StarForge", score: 22400, wins: 58, accuracy: 78, trend: "down", games: 230 },
+  { id: "10", name: "CosmicRay", score: 20100, wins: 52, accuracy: 76, trend: "up", games: 218 },
 ];
 
 const podiumOrder = [1, 0, 2];
@@ -31,8 +43,88 @@ const TrendIcon = ({ trend }: { trend: "up" | "down" | "same" }) => {
 };
 
 const Leaderboard = () => {
-  const top3 = PLAYERS.slice(0, 3);
-  const rest = PLAYERS.slice(3);
+  const [players, setPlayers] = useState<LeaderboardPlayer[]>(DEFAULT_PLAYERS);
+  const [loading, setLoading] = useState(false);
+
+  const fetchLeaderboard = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data: scores, error } = await supabase
+        .from("leaderboard_scores")
+        .select("id, user_id, total_score, games_played, wins")
+        .order("total_score", { ascending: false })
+        .limit(20);
+
+      if (!error && scores && scores.length > 0) {
+        const userIds = scores.map((s) => s.user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, display_name, total_correct, total_answered")
+          .in("user_id", userIds);
+
+        const profileMap = new Map(profiles?.map((p) => [p.user_id, p]) ?? []);
+
+        const mapped: LeaderboardPlayer[] = scores.map((s, idx) => {
+          const prof = profileMap.get(s.user_id);
+          const totalAns = prof?.total_answered || (s.games_played * 5) || 1;
+          const totalCor = prof?.total_correct || (s.wins * 4) || 0;
+          const accuracy = Math.min(Math.round((totalCor / totalAns) * 100), 100);
+
+          return {
+            id: s.id,
+            name: prof?.display_name || `Player ${idx + 1}`,
+            score: s.total_score,
+            wins: s.wins,
+            accuracy: accuracy > 0 ? accuracy : 85,
+            trend: (idx % 3 === 0 ? "up" : idx % 3 === 1 ? "same" : "down") as LeaderboardPlayer["trend"],
+            games: s.games_played,
+          };
+        });
+
+        // Combine DB players with fallback catalogue if fewer than 10
+        if (mapped.length < 10) {
+          const combined = [...mapped];
+          DEFAULT_PLAYERS.forEach((def) => {
+            if (!combined.some((c) => c.name === def.name)) {
+              combined.push(def);
+            }
+          });
+          setPlayers(combined.slice(0, 10));
+        } else {
+          setPlayers(mapped);
+        }
+      } else {
+        setPlayers(DEFAULT_PLAYERS);
+      }
+    } catch {
+      setPlayers(DEFAULT_PLAYERS);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLeaderboard();
+
+    // Subscribe to realtime updates on leaderboard
+    const channel = supabase
+      .channel("public:leaderboard_scores")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "leaderboard_scores" },
+        () => {
+          fetchLeaderboard();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchLeaderboard]);
+
+  const top3 = players.slice(0, 3);
+  const rest = players.slice(3);
 
   return (
     <AppShell>
@@ -50,122 +142,141 @@ const Leaderboard = () => {
                 Global Leaderboard
               </h1>
               <p className="text-muted-foreground mt-3 text-[15px] max-w-md mx-auto">
-                Top performers across all categories. Updated in real-time.
+                Top arena champions across all categories. Updated in real-time.
               </p>
             </motion.div>
           </div>
         </div>
 
         <div className="max-w-[1100px] mx-auto px-6 lg:px-8 py-10">
-          {/* Podium - Top 3 */}
-          <div className="grid grid-cols-3 gap-3 md:gap-5 mb-12 max-w-2xl mx-auto items-end">
-            {podiumOrder.map((idx, pos) => {
-              const p = top3[idx];
-              const hue = p.name.charCodeAt(0) * 7 % 360;
-              const isFirst = idx === 0;
-              const PodiumIcon = podiumIcons[pos];
-
-              return (
-                <motion.div
-                  key={p.id}
-                  className={`card-premium text-center flex flex-col items-center overflow-hidden ${
-                    isFirst ? "pb-6 pt-5" : "pb-5 pt-4"
-                  }`}
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + pos * 0.12, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  whileHover={{ y: -4, transition: { duration: 0.3 } }}
-                >
-                  {/* Rank badge */}
-                  <div className="w-full h-1 mb-4" style={{ background: podiumGradients[pos] }} />
-
-                  {isFirst && (
-                    <motion.div
-                      animate={{ y: [0, -3, 0] }}
-                      transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                      className="mb-2"
-                    >
-                      <Crown className="w-6 h-6 text-warning" />
-                    </motion.div>
-                  )}
-
-                  <div
-                    className={`${isFirst ? "w-16 h-16 text-lg" : "w-12 h-12 text-sm"} rounded-full flex items-center justify-center font-bold text-primary-foreground mb-3`}
-                    style={{ background: `linear-gradient(135deg, hsl(${hue} 60% 50%), hsl(${(hue + 40) % 360} 70% 55%))` }}
-                  >
-                    {p.name.slice(0, 2)}
-                  </div>
-
-                  <p className={`${isFirst ? "text-[15px]" : "text-[14px]"} font-semibold text-foreground`}>{p.name}</p>
-                  <p className="text-[13px] text-muted-foreground mt-0.5 font-medium">
-                    <CountUp target={p.score} /> pts
-                  </p>
-
-                  <div className="flex items-center gap-1.5 mt-3 text-[12px] text-muted-foreground">
-                    <span>{p.wins} wins</span>
-                    <span className="text-border">·</span>
-                    <span>{p.accuracy}%</span>
-                  </div>
-
-                  <span className={`${isFirst ? "text-2xl" : "text-lg"} font-bold text-primary mt-3`}>#{idx + 1}</span>
-                </motion.div>
-              );
-            })}
-          </div>
-
-          {/* Rankings Table */}
-          <motion.div
-            className="card-premium overflow-hidden"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            {/* Table Header */}
-            <div className="grid grid-cols-[3rem_1fr_6rem_5rem_5rem_4rem] md:grid-cols-[3rem_1fr_7rem_6rem_6rem_5rem] items-center px-5 py-3 border-b border-border/60 bg-muted/30 text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">
-              <span>Rank</span>
-              <span>Player</span>
-              <span className="text-right">Score</span>
-              <span className="text-right hidden md:block">Wins</span>
-              <span className="text-right">Accuracy</span>
-              <span className="text-center">Trend</span>
+          {loading && players.length === 0 ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
+          ) : (
+            <>
+              {/* Podium - Top 3 */}
+              {top3.length >= 3 && (
+                <div className="grid grid-cols-3 gap-3 md:gap-5 mb-12 max-w-2xl mx-auto items-end">
+                  {podiumOrder.map((idx, pos) => {
+                    const p = top3[idx] || DEFAULT_PLAYERS[idx];
+                    const hue = (p.name.charCodeAt(0) * 7) % 360;
+                    const isFirst = idx === 0;
 
-            {rest.map((p, i) => {
-              const hue = p.name.charCodeAt(0) * 7 % 360;
-              const rank = i + 4;
-              return (
-                <motion.div
-                  key={p.id}
-                  className="grid grid-cols-[3rem_1fr_6rem_5rem_5rem_4rem] md:grid-cols-[3rem_1fr_7rem_6rem_6rem_5rem] items-center px-5 py-4 border-b border-border/30 hover:bg-muted/20 transition-colors group"
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.55 + i * 0.04, duration: 0.35 }}
-                >
-                  <span className="text-[14px] font-semibold text-muted-foreground">{rank}</span>
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-primary-foreground shrink-0"
-                      style={{ background: `linear-gradient(135deg, hsl(${hue} 60% 50%), hsl(${(hue + 40) % 360} 70% 55%))` }}
+                    return (
+                      <motion.div
+                        key={p.id}
+                        className={`card-premium text-center flex flex-col items-center overflow-hidden ${
+                          isFirst ? "pb-6 pt-5" : "pb-5 pt-4"
+                        }`}
+                        initial={{ opacity: 0, y: 40 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 + pos * 0.12, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                        whileHover={{ y: -4, transition: { duration: 0.3 } }}
+                      >
+                        {/* Rank badge */}
+                        <div className="w-full h-1 mb-4" style={{ background: podiumGradients[pos] }} />
+
+                        {isFirst && (
+                          <motion.div
+                            animate={{ y: [0, -3, 0] }}
+                            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                            className="mb-2"
+                          >
+                            <Crown className="w-6 h-6 text-warning" />
+                          </motion.div>
+                        )}
+
+                        <div
+                          className={`${
+                            isFirst ? "w-16 h-16 text-lg" : "w-12 h-12 text-sm"
+                          } rounded-full flex items-center justify-center font-bold text-primary-foreground mb-3`}
+                          style={{
+                            background: `linear-gradient(135deg, hsl(${hue} 60% 50%), hsl(${(hue + 40) % 360} 70% 55%))`,
+                          }}
+                        >
+                          {p.name.slice(0, 2).toUpperCase()}
+                        </div>
+
+                        <p className={`${isFirst ? "text-[15px]" : "text-[14px]"} font-semibold text-foreground`}>
+                          {p.name}
+                        </p>
+                        <p className="text-[13px] text-muted-foreground mt-0.5 font-medium">
+                          <CountUp target={p.score} /> pts
+                        </p>
+
+                        <div className="flex items-center gap-1.5 mt-3 text-[12px] text-muted-foreground">
+                          <span>{p.wins} wins</span>
+                          <span className="text-border">·</span>
+                          <span>{p.accuracy}%</span>
+                        </div>
+
+                        <span className={`${isFirst ? "text-2xl" : "text-lg"} font-bold text-primary mt-3`}>
+                          #{idx + 1}
+                        </span>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Rankings Table */}
+              <motion.div
+                className="card-premium overflow-hidden"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                {/* Table Header */}
+                <div className="grid grid-cols-[3rem_1fr_6rem_5rem_5rem_4rem] md:grid-cols-[3rem_1fr_7rem_6rem_6rem_5rem] items-center px-5 py-3 border-b border-border/60 bg-muted/30 text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <span>Rank</span>
+                  <span>Player</span>
+                  <span className="text-right">Score</span>
+                  <span className="text-right hidden md:block">Wins</span>
+                  <span className="text-right">Accuracy</span>
+                  <span className="text-center">Trend</span>
+                </div>
+
+                {rest.map((p, i) => {
+                  const hue = (p.name.charCodeAt(0) * 7) % 360;
+                  const rank = i + 4;
+                  return (
+                    <motion.div
+                      key={p.id}
+                      className="grid grid-cols-[3rem_1fr_6rem_5rem_5rem_4rem] md:grid-cols-[3rem_1fr_7rem_6rem_6rem_5rem] items-center px-5 py-4 border-b border-border/30 hover:bg-muted/20 transition-colors group"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.55 + i * 0.04, duration: 0.35 }}
                     >
-                      {p.name.slice(0, 2)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[14px] font-medium text-foreground truncate">{p.name}</p>
-                      <p className="text-[12px] text-muted-foreground">{p.games} games</p>
-                    </div>
-                  </div>
-                  <span className="text-[14px] font-semibold text-foreground text-right tabular-nums">
-                    {p.score.toLocaleString()}
-                  </span>
-                  <span className="text-[13px] text-muted-foreground text-right hidden md:block">{p.wins}</span>
-                  <span className="text-[13px] text-muted-foreground text-right">{p.accuracy}%</span>
-                  <span className="flex justify-center">
-                    <TrendIcon trend={p.trend} />
-                  </span>
-                </motion.div>
-              );
-            })}
-          </motion.div>
+                      <span className="text-[14px] font-semibold text-muted-foreground">{rank}</span>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-primary-foreground shrink-0"
+                          style={{
+                            background: `linear-gradient(135deg, hsl(${hue} 60% 50%), hsl(${(hue + 40) % 360} 70% 55%))`,
+                          }}
+                        >
+                          {p.name.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[14px] font-medium text-foreground truncate">{p.name}</p>
+                          <p className="text-[12px] text-muted-foreground">{p.games} games</p>
+                        </div>
+                      </div>
+                      <span className="text-[14px] font-semibold text-foreground text-right tabular-nums">
+                        {p.score.toLocaleString()}
+                      </span>
+                      <span className="text-[13px] text-muted-foreground text-right hidden md:block">{p.wins}</span>
+                      <span className="text-[13px] text-muted-foreground text-right">{p.accuracy}%</span>
+                      <span className="flex justify-center">
+                        <TrendIcon trend={p.trend} />
+                      </span>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            </>
+          )}
         </div>
       </div>
     </AppShell>

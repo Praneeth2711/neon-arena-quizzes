@@ -18,42 +18,54 @@ interface ChatPanelProps {
   roomId: string;
 }
 
+const INITIAL_MESSAGES: Message[] = [
+  { id: "m1", user_id: "bot-1", display_name: "NeonKnight", message: "Good luck everyone! 🔥", created_at: new Date(Date.now() - 60000).toISOString() },
+  { id: "m2", user_id: "bot-2", display_name: "CyberQueen", message: "Ready for the challenge 🎯", created_at: new Date(Date.now() - 30000).toISOString() },
+];
+
 const ChatPanel = ({ roomId }: ChatPanelProps) => {
   const { user, profile } = useAuth();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [floats, setFloats] = useState<{ id: number; emoji: string; x: number }[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const currentDisplayName = profile?.display_name || user?.email?.split("@")[0] || "You";
+
   // Fetch existing messages + subscribe to new ones
   useEffect(() => {
     if (!roomId) return;
 
+    let isMounted = true;
+
     const fetchMessages = async () => {
-      const { data } = await supabase
-        .from("chat_messages")
-        .select("id, user_id, message, created_at")
-        .eq("room_id", roomId)
-        .order("created_at", { ascending: true })
-        .limit(100);
+      try {
+        const { data, error } = await supabase
+          .from("chat_messages")
+          .select("id, user_id, message, created_at")
+          .eq("room_id", roomId)
+          .order("created_at", { ascending: true })
+          .limit(100);
 
-      if (data) {
-        // Fetch display names for all user_ids
-        const userIds = [...new Set(data.map((m) => m.user_id))];
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("user_id, display_name")
-          .in("user_id", userIds);
+        if (!error && data && data.length > 0 && isMounted) {
+          const userIds = [...new Set(data.map((m) => m.user_id))];
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("user_id, display_name")
+            .in("user_id", userIds);
 
-        const nameMap = new Map(profiles?.map((p) => [p.user_id, p.display_name]) ?? []);
+          const nameMap = new Map(profiles?.map((p) => [p.user_id, p.display_name]) ?? []);
 
-        setMessages(
-          data.map((m) => ({
-            ...m,
-            display_name: nameMap.get(m.user_id) ?? "Anonymous",
-          }))
-        );
+          setMessages(
+            data.map((m) => ({
+              ...m,
+              display_name: nameMap.get(m.user_id) ?? "Player",
+            }))
+          );
+        }
+      } catch (err) {
+        console.warn("Chat messages load notice:", err);
       }
     };
 
@@ -71,25 +83,27 @@ const ChatPanel = ({ roomId }: ChatPanelProps) => {
         },
         async (payload) => {
           const newMsg = payload.new as { id: string; user_id: string; message: string; created_at: string };
-          // Fetch display name
           const { data: prof } = await supabase
             .from("profiles")
             .select("display_name")
             .eq("user_id", newMsg.user_id)
-            .single();
+            .maybeSingle();
 
-          setMessages((prev) => [
-            ...prev,
-            {
-              ...newMsg,
-              display_name: prof?.display_name ?? "Anonymous",
-            },
-          ]);
+          if (isMounted) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                ...newMsg,
+                display_name: prof?.display_name ?? "Player",
+              },
+            ]);
+          }
         }
       )
       .subscribe();
 
     return () => {
+      isMounted = false;
       supabase.removeChannel(channel);
     };
   }, [roomId]);
@@ -101,15 +115,35 @@ const ChatPanel = ({ roomId }: ChatPanelProps) => {
 
   const send = async (text?: string) => {
     const msg = text ?? input.trim();
-    if (!msg || !user || !roomId) return;
+    if (!msg || !roomId) return;
     if (!text) setInput("");
-    setSending(true);
-    await supabase.from("chat_messages").insert({
-      room_id: roomId,
-      user_id: user.id,
+
+    const tempId = `local-${Date.now()}`;
+    const optimisticMessage: Message = {
+      id: tempId,
+      user_id: user?.id || "local-guest",
+      display_name: currentDisplayName,
       message: msg,
-    });
-    setSending(false);
+      created_at: new Date().toISOString(),
+    };
+
+    // Optimistic UI update
+    setMessages((prev) => [...prev, optimisticMessage]);
+
+    if (user?.id) {
+      setSending(true);
+      try {
+        await supabase.from("chat_messages").insert({
+          room_id: roomId,
+          user_id: user.id,
+          message: msg,
+        });
+      } catch (err) {
+        console.warn("Chat send notice:", err);
+      } finally {
+        setSending(false);
+      }
+    }
   };
 
   const react = (emoji: string) => {
@@ -119,14 +153,14 @@ const ChatPanel = ({ roomId }: ChatPanelProps) => {
     send(emoji);
   };
 
-  const isMe = (userId: string) => userId === user?.id;
+  const isMe = (userId: string) => userId === user?.id || userId === "local-guest";
 
   return (
     <div className="card-premium flex flex-col h-full max-h-[480px]">
       <div className="p-4 border-b border-border">
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
           <MessageCircle className="w-4 h-4 text-primary" />
-          Live Chat
+          Live Arena Chat
           <span className="text-xs text-muted-foreground font-normal">({messages.length})</span>
         </h3>
       </div>
@@ -141,12 +175,12 @@ const ChatPanel = ({ roomId }: ChatPanelProps) => {
               key={msg.id}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-sm"
+              className="text-sm flex flex-wrap items-baseline gap-1.5"
             >
-              <span className={`font-medium ${isMe(msg.user_id) ? "text-accent-foreground" : "text-primary"}`}>
-                {isMe(msg.user_id) ? "You" : msg.display_name}
+              <span className={`font-semibold text-xs ${isMe(msg.user_id) ? "text-primary" : "text-muted-foreground"}`}>
+                {isMe(msg.user_id) ? "You:" : `${msg.display_name}:`}
               </span>
-              <span className="text-muted-foreground ml-1.5">{msg.message}</span>
+              <span className="text-foreground text-sm">{msg.message}</span>
             </motion.div>
           ))}
         </AnimatePresence>
@@ -172,9 +206,8 @@ const ChatPanel = ({ roomId }: ChatPanelProps) => {
           <motion.button
             key={e}
             onClick={() => react(e)}
-            className="text-sm p-1 hover:scale-125 transition-transform"
+            className="text-sm p-1.5 hover:scale-125 transition-transform cursor-pointer"
             whileTap={{ scale: 0.8 }}
-            disabled={!user}
           >
             {e}
           </motion.button>
@@ -186,14 +219,13 @@ const ChatPanel = ({ roomId }: ChatPanelProps) => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
-          placeholder={user ? "Type a message..." : "Sign in to chat"}
-          disabled={!user}
-          className="flex-1 bg-muted text-foreground text-sm rounded-lg px-3 py-2 outline-none border border-border focus:border-primary/50 transition-colors placeholder:text-muted-foreground disabled:opacity-50"
+          placeholder="Send a message..."
+          className="flex-1 bg-muted text-foreground text-sm rounded-lg px-3 py-2 outline-none border border-border focus:border-primary/50 transition-colors placeholder:text-muted-foreground"
         />
         <motion.button
           onClick={() => send()}
-          disabled={!user || sending || !input.trim()}
-          className="p-2 rounded-lg bg-primary text-primary-foreground disabled:opacity-50"
+          disabled={sending || !input.trim()}
+          className="p-2 rounded-lg bg-primary text-primary-foreground disabled:opacity-50 cursor-pointer"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >

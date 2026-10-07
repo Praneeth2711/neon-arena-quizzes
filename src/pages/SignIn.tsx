@@ -2,14 +2,15 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
-import { Zap, Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
+import { Zap, Mail, Lock, ArrowRight, Loader2, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, demoSignIn } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,6 +21,13 @@ const SignIn = () => {
     const { error } = await signIn(email, password);
     setLoading(false);
     if (error) { setError(error.message); return; }
+    toast.success("Signed in successfully!");
+    navigate("/lobby");
+  };
+
+  const handleDemoSignIn = async () => {
+    await demoSignIn("Praneeth");
+    toast.success("Logged in as Praneeth (Demo Account)");
     navigate("/lobby");
   };
 
@@ -39,16 +47,18 @@ const SignIn = () => {
             >
               <Zap className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-foreground tracking-tight">QuizArena</span>
+            <span className="text-xl font-bold text-foreground tracking-tight">Neon Arena</span>
           </Link>
           <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
-          <p className="text-muted-foreground text-sm mt-1">Sign in to continue to QuizArena</p>
+          <p className="text-muted-foreground text-sm mt-1">Sign in to continue to Neon Arena Quizzes</p>
         </div>
 
         <div className="card-premium p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
+              <div className="p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs leading-relaxed">
+                {error}
+              </div>
             )}
             <div>
               <label className="text-sm font-medium text-foreground mb-1.5 block">Email</label>
@@ -64,7 +74,15 @@ const SignIn = () => {
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Password</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-sm font-medium text-foreground block">Password</label>
+                <Link
+                  to="/forgot-password"
+                  className="text-xs text-primary font-medium hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
@@ -79,7 +97,7 @@ const SignIn = () => {
             <motion.button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-primary-foreground disabled:opacity-50 cursor-pointer shadow-sm"
               style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(262 83% 58%))" }}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
@@ -87,6 +105,27 @@ const SignIn = () => {
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Sign In <ArrowRight className="w-4 h-4" /></>}
             </motion.button>
           </form>
+
+          {/* Quick Demo Access */}
+          <div className="relative my-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border/60" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2.5 text-muted-foreground font-medium">Or test instantly</span>
+            </div>
+          </div>
+
+          <motion.button
+            type="button"
+            onClick={handleDemoSignIn}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-sm font-semibold transition-all cursor-pointer"
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+          >
+            <Sparkles className="w-4 h-4" />
+            Continue with Demo Account
+          </motion.button>
         </div>
 
         <p className="text-center text-sm text-muted-foreground mt-6">

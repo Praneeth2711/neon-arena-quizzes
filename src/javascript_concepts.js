@@ -8,7 +8,7 @@
 // ─────────────────────────────────────────────
 // 1. VARIABLES & DATA TYPES
 // ─────────────────────────────────────────────
-const APP_NAME = "QuizArena";          // string  — immutable reference
+const APP_NAME = "Neon Arena Quizzes"; // string  — immutable reference
 let currentScore = 0;                   // number  — mutable
 let isGameOver = false;                 // boolean
 let selectedAnswer = null;              // null    — no value yet
@@ -337,7 +337,7 @@ const Storage = {
 // ─────────────────────────────────────────────
 
 // Named exports (e.g., utils.js)
-export const formatScore = (n) => n.toLocaleString();
+export const formatScoreDisplay = (n) => n.toLocaleString();
 export const getInitials = (name) => name.split(" ").map(w => w[0]).join("").toUpperCase();
 export const clamp = (val, min, max) => Math.min(Math.max(val, min), max);
 export const lerp = (a, b, t) => a + (b - a) * t;
